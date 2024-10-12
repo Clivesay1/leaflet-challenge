@@ -101,6 +101,7 @@ let format = {
     color: chooseColor(feature.geometry.coordinates[2]),
     fillColor: chooseColor(feature.geometry.coordinates[2]),
     opacity: 1,
+    fillOpacity: 1
 }
 return format
 }
