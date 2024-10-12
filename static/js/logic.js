@@ -98,9 +98,9 @@ function chooseSize(magnitude) {
 function formatCircleMarker (feature, latlng) {
 let format = {
     radius: chooseSize(feature.properties.mag),
-    fillColor: chooseColor(feature.geometry.coordinates[2]),
     color: chooseColor(feature.geometry.coordinates[2]),
-    opacity: 1
+    fillColor: chooseColor(feature.geometry.coordinates[2]),
+    opacity: 1,
 }
 return format
 }
