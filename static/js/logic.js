@@ -3,9 +3,7 @@ let Url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.ge
 
 //map
 let myMap = L.map("map", {
-    center: [
-      35, -100
-    ],
+    center: [35, -100],
     zoom: 7,
 });
 
