@@ -17,6 +17,6 @@ INSTRUCTIONS:
 - Click markers for information regarding earthquakes.
 
 DATA SOURCES:
-- [http://robdunnlab.com/projects/belly-button-biodiversity/](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php) 
+- [https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php] 
 
 - Michael Komnick proofread and troubleshot code.
