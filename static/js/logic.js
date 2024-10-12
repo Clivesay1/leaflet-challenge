@@ -104,9 +104,7 @@ let format = {
     fillOpacity: 1
 }
 return format
-}
-
-});
+}});
 
 //Set up map legend to show depth colors
 let legend = L.control({ position: "bottomright"});
