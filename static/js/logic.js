@@ -1,155 +1,131 @@
-const url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
+//variable to hold the URL for the earthquake data
+let Url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson"
 
-// Function to create the map
-function createMap(eq){
-
-    // Create the satellite tile
-    let sat = L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', {
-        minZoom:2,
-        maxZoom: 12,
-        attribution: 'Tiles courtesy of the <a href="https://usgs.gov/">U.S. Geological Survey</a>'
-    });
-
-    // Create topo Tile
-    let openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        minZoom:2,
-        maxZoom: 12,
-        attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-    });
-
-    // Create StadiaToner tile
-    var Stadia_StamenToner = L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png', {
-	minZoom: 2,
-	maxZoom: 12,
-	attribution: '&copy; <a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a> <a href="https://stamen.com/" target="_blank">&copy; Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a> contributors'	
+//map
+let myMap = L.map("map", {
+    center: [
+      35, -100
+    ],
+    zoom: 7,
 });
 
-    // baseMaps object
-    let baseMaps = {
-        "Satellite" : sat,
-        "OpenTopo": openTopo,
-        "Stadia Toner": Stadia_StamenToner
-    };
+//base layers.
+let street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+});
 
-    // Create an overlay object
-    let overlayMaps = {
-        "Earthquakes" : eq
-    };
+ let Topographic = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+   attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+});
 
-    // Create the map
-    let myMap = L.map("map",{
-        center: [0, 0],
-        zoom:2,
-        layers:[sat,eq]
-    });
+ let Satellite = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+  maxZoom: 20,
+  subdomains:['mt0','mt1','mt2','mt3']
+});
 
-    // Create a layer control
-    var layerControl = L.control.layers(baseMaps, overlayMaps,{
-        collapsed:false
-    }).addTo(myMap);
+//baseMaps object.
+let baseMaps = {
+  "Street Map": street,
+  "Topographic Map": Topographic,
+  "Satellite Map": Satellite
+};
 
-    // Create the Tectonic Plate geoJSON
-    d3.json("https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json").then((geodata) => {
+//layer group for the earthquakes
+let earthquakes = new L.LayerGroup();
 
-    let plates = L.geoJson(geodata,{
-        style: {
-            color: "orange",            
-            fill: false
-        }
-    });
+//Use d3 to get data from the URL
+d3.json(Url).then(function (data) {
 
-    // Add the plates to the Overlay
-    layerControl.addOverlay(plates, "Tectonic Plates");
+//geojson layer with data
+  L.geoJSON(data, {
+    onEachFeature: onEachFeature,
+    style: formatCircleMarker,
+    pointToLayer: function (feature, latlng) {
+      return L.circleMarker(latlng);
+    }}).addTo(earthquakes);
 
-    });
+//overlayMaps object to hold our earthquakes layer.
+let overlayMaps = {
+  Earthquakes: earthquakes
+};
 
-    // Create a legend control
-    let legend = L.control({
-        position:"bottomright"
-    });
+//layer control and pass in our baseMaps and overlayMaps
+L.control.layers(baseMaps, overlayMaps, {
+  collapsed: false
+}).addTo(myMap);
 
-    // Add a div class to legend control
-    legend.onAdd = function(){
-        let div = L.DomUtil.create("div", "legend");
-        return div;
-    };
+//Add the layer control to the map
+earthquakes.addTo(myMap);
+street.addTo(myMap);
 
-    // Add legend control to map
-    legend.addTo(myMap);
-
+//function to create popups for each feature
+function onEachFeature(feature, layer) {
+  layer.bindPopup("<h3>" + feature.properties.place + "</h3><hr><p>" + new Date(feature.properties.time) + "</p><p>Magnitude: " + feature.properties.mag + "</p><p>Depth: " + feature.geometry.coordinates[2] + "</p>");
 }
 
-//createMap();
+//function to select marker color based on depth
+function chooseColor(depth) {
+  var color = "";
+  if (depth >= -10 && depth <= 10) {
+      return color = "#98ee00";
+  }
+  else if (depth > 10 && depth <= 30) {
+      return color = "#d4ee00";
+  }
+  else if (depth > 30 && depth <= 50) {
+      return color = "#eecc00";
+  }
+  else if (depth > 50 && depth <= 70) {
+      return color =  "#ee9c00";
+  }
+  else if (depth > 70 && depth <= 90) {
+      return color = "#ea822c";
+  }
+  else if (90 < depth) {
+      return color = "#ea2c2c";
+  }
+  else {
+      return color = "black";
+  }
+}
+//function to select marker size based on magnitude
+function chooseSize(magnitude) {
+  if (magnitude === 0) {
+    return magnitude * 1
+  };
+  return magnitude * 5
+};
 
-// Function to create the earthquake markers
-function eqMarkers(response){
-
-    // Function to determine marker color
-    function circleColor(depth){
-        if (depth < 10){
-            return "#a3f601"
-        } else if (depth < 30){
-            return "#dcf400"
-        } else if (depth < 50){
-            return "#f7db12"
-        } else if (depth < 70){
-            return "#fdb72a"
-        } else if (depth < 90){
-            return "#fca35d"
-        } else {return "#ff5f64"}
-    };
-
-    // Function to determine marker size
-    function circleSize(mag){
-        return mag*5;
-    }
-
-    // Function to bindpopup
-    function onEachFeature(feature, layer) {
-        layer.bindPopup(`<h4>Earthquake Details</h4><hr/>\
-        <small><b>Date/Time:</b> ${new Date(feature.properties.time).toUTCString()}<br/>\
-        <b>Location:</b> ${feature.properties.place}<br/>\
-        <b>Lat:</b> ${feature.geometry.coordinates[1]}<br/>\
-        <b>Long:</b> ${feature.geometry.coordinates[0]}<br/>\
-        <b>Depth:</b> ${feature.geometry.coordinates[2]}<br/>\
-        <b>Magnitude:</b> ${feature.properties.mag}<br/>\
-        <a target="_blank" href=${feature.properties.url}>USGS Eventpage</a></small>`
-        )};
-
-    // Function to create Circle
-    function createMarker(geoJsonPoint, latlng){
-        //console.log(geoJsonPoint);
-        return L.circleMarker(latlng, {
-            radius : circleSize(geoJsonPoint.properties.mag),
-            weight: 1,
-            color: "gray",
-            fillColor: circleColor(geoJsonPoint.geometry.coordinates[2]),
-            fillOpacity: 0.9
-        });
-    };
-
-    // Create the earthquake markers
-    let eq_markers = L.geoJson(response,{
-        pointToLayer : createMarker,
-        onEachFeature : onEachFeature
-        });
-    
-    // Call functions to create the map and legend
-    createMap(eq_markers);
-    createLegend();
+//function to format markers
+function formatCircleMarker (feature, latlng) {
+let format = {
+    radius: chooseSize(feature.properties.mag),
+    fillColor: chooseColor(feature.geometry.coordinates[2]),
+    color: chooseColor(feature.geometry.coordinates[2]),
+    opacity: 1
+}
+return format
 }
 
-// Function to create legend
-function createLegend(){
-    document.querySelector(".legend").innerHTML = [
-        "<h4>Depth Legend</h4><hr/>",
-        "<div class='legoption'><div class='box' style='background-color:#a3f601;'></div> -10-10</div>",
-        "<div class='legoption'><div class='box' style='background-color:#dcf400;'></div> 10-30</div>",
-        "<div class='legoption'><div class='box' style='background-color:#f7db12;'></div> 30-50</div>",
-        "<div class='legoption'><div class='box' style='background-color:#fdb72a;'></div> 50-70</div>",
-        "<div class='legoption'><div class='box' style='background-color:#fca35d;'></div> 70-90</div>",
-        "<div class='legoption'><div class='box' style='background-color:#ff5f64;'></div> 90+</div>",
-    ].join("");
-}
+});
 
-d3.json(url).then(eqMarkers);
+//Set up map legend to show depth colors
+let legend = L.control({ position: "bottomright"});
+
+legend.onAdd = function () {
+let div = L.DomUtil.create("div", "info legend");
+
+let colors = ["#98ee00", "#d4ee00", "#eecc00", "#ee9c00", "#ea822c", "#ea2c2c"]
+let depthRange = [-10, 10, 30, 50, 70, 90];
+
+//loop through each range and create label with color
+for (let i = 0; i < depthRange.length; i++) {
+  div.innerHTML += 
+  "<i style='background: " + colors[i] + " '></i>"  + 
+  depthRange[i] + (depthRange[i + 1] ? "&ndash;" + depthRange[i + 1] + "<br>" : "+");
+}
+  return div;
+};
+
+//Add legend to map
+legend.addTo(myMap);
